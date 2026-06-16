@@ -1,0 +1,221 @@
+### Variables Globales
+@baseUrl = http://localhost:3000/api/v1
+@adminToken = Bearer admin-user123
+@customerToken1 = Bearer customer-cust456
+@customerToken2 = Bearer customer-cust789
+
+# =================================================================
+# 1. SUPLEMENTOS (SUPPLEMENTS)
+# =================================================================
+
+### 1.1 Listar Suplementos (Sin filtros - Primera página)
+GET {{baseUrl}}/supplements
+    ?page=1
+    &limit=5
+
+### 1.2 Listar Suplementos con Filtro de Búsqueda (search=creatina)
+GET {{baseUrl}}/supplements
+    ?search=creatina
+
+### 1.3 Listar Suplementos con Filtro de Categoría (category=Minerales)
+GET {{baseUrl}}/supplements
+    ?category=Minerales
+
+### 1.4 Listar Suplementos con Filtro de Stock (inStock=true)
+GET {{baseUrl}}/supplements
+    ?inStock=true
+
+### 1.5 Obtener Detalle de Suplemento (Existente: Proteína Whey)
+GET {{baseUrl}}/supplements/c0a80101-1111-4444-8888-999999999999
+
+### 1.6 Obtener Detalle de Suplemento (No Existente -> 404)
+GET {{baseUrl}}/supplements/c0a80101-9999-4444-8888-999999999999
+
+### 1.7 Crear Suplemento Exitoso (201 Created)
+POST {{baseUrl}}/supplements
+Content-Type: application/json
+
+{
+  "name": "Glutamina Ultra",
+  "brand": "MuscleTech",
+  "category": "Recuperación",
+  "presentation": "Polvo 300g",
+  "dosage": "5g post-entrenamiento",
+  "price": 380.00,
+  "stock": 10,
+  "requiresPrescription": false,
+  "description": "Glutamina micronizada pura para la recuperación y salud intestinal."
+}
+
+### 1.8 Crear Suplemento - Conflicto de Nombre (409 Conflict)
+# Intentar crear "Proteína Whey Premium" que ya existe
+POST {{baseUrl}}/supplements
+Content-Type: application/json
+
+{
+  "name": "Proteína Whey Premium",
+  "brand": "Optimum Nutrition",
+  "category": "Proteínas",
+  "presentation": "Polvo 2kg",
+  "dosage": "1 scoop diario (30g)",
+  "price": 899.90,
+  "stock": 15,
+  "requiresPrescription": false
+}
+
+### 1.9 Crear Suplemento - Error de Validación (422 Unprocessable Entity)
+# Faltan campos obligatorios o tipos de datos incorrectos
+POST {{baseUrl}}/supplements
+Content-Type: application/json
+
+{
+  "name": "",
+  "brand": "Marca Falsa",
+  "price": -10.50,
+  "stock": 1.5
+}
+
+### 1.10 Actualizar Suplemento Parcial (200 OK)
+PATCH {{baseUrl}}/supplements/c0a80101-1111-4444-8888-999999999999
+Content-Type: application/json
+
+{
+  "price": 950.00,
+  "stock": 18,
+  "description": "Precio actualizado de Whey Premium con mayor stock disponible."
+}
+
+### 1.11 Actualizar Suplemento - Validación Incorrecta (422)
+PATCH {{baseUrl}}/supplements/c0a80101-1111-4444-8888-999999999999
+Content-Type: application/json
+
+{
+  "stock": -5
+}
+
+### 1.12 Eliminar Suplemento Exitoso (204 No Content)
+# Primero creamos uno temporal para eliminarlo
+# NOTA: OBTENER SU ID DE LA RESPUESTA DE CREACIÓN E INSERTARLO ABAJO
+DELETE {{baseUrl}}/supplements/c0a80101-3333-4444-8888-999999999999
+
+
+# =================================================================
+# 2. PEDIDOS (ORDERS)
+# =================================================================
+
+### 2.1 Intentar Crear Pedido sin Autenticación (401 Unauthorized)
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "notes": "Entrega por la tarde",
+  "items": [
+    {
+      "supplementId": "c0a80101-1111-4444-8888-999999999999",
+      "quantity": 2
+    }
+  ]
+}
+
+### 2.2 Crear Pedido Exitoso como Cliente (201 Created)
+# Se reduce el stock de Proteína Whey (id: 1111...) y Hierro Médico (id: 4444...)
+POST {{baseUrl}}/orders
+Authorization: {{customerToken1}}
+Content-Type: application/json
+
+{
+  "notes": "Dejar en recepción por favor.",
+  "items": [
+    {
+      "supplementId": "c0a80101-1111-4444-8888-999999999999",
+      "quantity": 2
+    },
+    {
+      "supplementId": "c0a80101-4444-4444-8888-999999999999",
+      "quantity": 1
+    }
+  ]
+}
+
+### 2.3 Crear Pedido - Error de Validación de Stock (422 Unprocessable Entity)
+# Intentamos comprar Creatina (stock disponible: 25) pero pedimos 100
+POST {{baseUrl}}/orders
+Authorization: {{customerToken2}}
+Content-Type: application/json
+
+{
+  "notes": "Compra masiva",
+  "items": [
+    {
+      "supplementId": "c0a80101-2222-4444-8888-999999999999",
+      "quantity": 100
+    }
+  ]
+}
+
+### 2.4 Listar Todos los Pedidos como Admin (200 OK)
+GET {{baseUrl}}/orders
+Authorization: {{adminToken}}
+
+### 2.5 Listar Pedidos como Cliente sin Privilegios de Admin (403 Forbidden)
+GET {{baseUrl}}/orders
+Authorization: {{customerToken1}}
+
+### 2.6 Listar "Mis Pedidos" (200 OK)
+GET {{baseUrl}}/orders/me
+Authorization: {{customerToken1}}
+
+### 2.7 Obtener Detalle de Pedido Propio (200 OK)
+# Reemplazar el UUID con el ID generado en la creación del paso 2.2
+GET {{baseUrl}}/orders/REEMPLAZAR_CON_ID_PEDIDO
+Authorization: {{customerToken1}}
+
+### 2.8 Obtener Detalle de Pedido Ajeno como Cliente (403 Forbidden)
+# El cliente 2 intenta ver el pedido del cliente 1
+GET {{baseUrl}}/orders/REEMPLAZAR_CON_ID_PEDIDO
+Authorization: {{customerToken2}}
+
+### 2.9 Obtener Detalle de Pedido Ajeno como Administrador (200 OK)
+# El admin puede ver cualquier pedido
+GET {{baseUrl}}/orders/REEMPLAZAR_CON_ID_PEDIDO
+Authorization: {{adminToken}}
+
+### 2.10 Cancelar Pedido (200 OK)
+# Restaura el stock de los suplementos del pedido cancelado
+POST {{baseUrl}}/orders/REEMPLAZAR_CON_ID_PEDIDO/cancel
+Authorization: {{customerToken1}}
+
+
+# =================================================================
+# 3. DETALLE DE ÍTEMS DE PEDIDOS (ORDER ITEMS)
+# =================================================================
+
+### 3.1 Listar ítems de un Pedido (200 OK)
+GET {{baseUrl}}/orders/REEMPLAZAR_CON_ID_PEDIDO/items
+Authorization: {{customerToken1}}
+
+### 3.2 Agregar Ítem a un Pedido Existente (201 Created)
+# Agrega Creatina (c0a80101-2222-4444-8888-999999999999) al pedido pendiente
+POST {{baseUrl}}/orders/REEMPLAZAR_CON_ID_PEDIDO/items
+Authorization: {{customerToken1}}
+Content-Type: application/json
+
+{
+  "supplementId": "c0a80101-2222-4444-8888-999999999999",
+  "quantity": 3
+}
+
+### 3.3 Agregar Ítem - Error de Validación de Stock (422)
+POST {{baseUrl}}/orders/REEMPLAZAR_CON_ID_PEDIDO/items
+Authorization: {{customerToken1}}
+Content-Type: application/json
+
+{
+  "supplementId": "c0a80101-2222-4444-8888-999999999999",
+  "quantity": 1000
+}
+
+### 3.4 Eliminar Ítem de un Pedido (204 No Content)
+# Elimina el ítem y restaura su stock correspondiente
+DELETE {{baseUrl}}/orders/REEMPLAZAR_CON_ID_PEDIDO/items/REEMPLAZAR_CON_ID_ITEM
+Authorization: {{customerToken1}}

@@ -1,0 +1,48 @@
+{
+  "supplements": [
+    {
+      "id": "c0a80101-1111-4444-8888-999999999999",
+      "name": "Proteína Whey Premium",
+      "brand": "Optimum Nutrition",
+      "category": "Proteínas",
+      "presentation": "Polvo 2kg",
+      "price": 800,
+      "stock": 10,
+      "dosage": "1 scoop",
+      "requiresPrescription": false,
+      "createdAt": "2026-06-16T16:45:33.106Z",
+      "updatedAt": "2026-06-16T16:45:33.148Z"
+    },
+    {
+      "id": "c0a80101-2222-4444-8888-999999999999",
+      "name": "Creatina",
+      "brand": "Birdman",
+      "category": "Aminoácidos",
+      "presentation": "Polvo 500g",
+      "price": 400,
+      "stock": 5,
+      "dosage": "5g",
+      "requiresPrescription": false,
+      "createdAt": "2026-06-16T16:45:33.106Z",
+      "updatedAt": "2026-06-16T16:45:33.146Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": "bc2a616f-9686-4b37-bda4-fc05a91803f0",
+      "customerId": "testuser1",
+      "status": "cancelled",
+      "items": [
+        {
+          "id": "24fa22f3-9633-4443-afde-7ab9c0fa4ebf",
+          "supplementId": "c0a80101-1111-4444-8888-999999999999",
+          "quantity": 2,
+          "priceAtOrder": 800
+        }
+      ],
+      "total": 1600,
+      "createdAt": "2026-06-16T16:45:33.138Z",
+      "updatedAt": "2026-06-16T16:45:33.148Z"
+    }
+  ]
+}
